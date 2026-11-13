@@ -1,0 +1,15 @@
+# Allowlist: runtime data must never be published accidentally.
+*
+!/.gitignore
+!/.gitattributes
+!/core.py
+!/server.py
+!/launcher.py
+!/settings.py
+!/test_settings.py
+!/index.html
+!/test_core.py
+!/test_server.py
+!/README.md
+!/Проверка.md
+!/Запустить.cmd
