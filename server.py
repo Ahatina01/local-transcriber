@@ -11,7 +11,7 @@ import core
 TOKEN = secrets.token_urlsafe(32)
 STATE = {'busy': False, 'stage': 'Готово к работе', 'text': '', 'summary': '', 'files': {}, 'error': ''}
 LOCK = threading.Lock()
-ALLOWED = {'.ogg', '.oga', '.opus', '.mp3', '.wav', '.m4a', '.flac', '.webm', '.mp4', '.mkv', '.mov', '.avi'}
+ALLOWED = {'.txt', '.ogg', '.oga', '.opus', '.mp3', '.wav', '.m4a', '.flac', '.webm', '.mp4', '.mkv', '.mov', '.avi'}
 
 
 def update(**values):
@@ -23,7 +23,8 @@ def process(path, name):
     transcript = ''
     files = {}
     try:
-        transcript = core.transcribe(path, lambda stage: update(stage=stage))
+        transcript = (Path(path).read_text(encoding='utf-8-sig') if Path(path).suffix.lower() == '.txt'
+                      else core.transcribe(path, lambda stage: update(stage=stage)))
         # Persist before starting the LLM, so a failed summary never loses recognition.
         files = core.export_result(core.ROOT / 'results', name, transcript, 'Конспект ещё не сформирован.')
         update(text=transcript, files=files)

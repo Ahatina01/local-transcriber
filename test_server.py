@@ -2,12 +2,26 @@ import http.client
 import threading
 import unittest
 import io
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 import server
 
 
 class ServerTests(unittest.TestCase):
+    def test_txt_reuses_transcript_without_recognition(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            source = root / 'input.txt'
+            source.write_text('Полный текст записи', encoding='utf-8-sig')
+            with patch.object(server.core, 'ROOT', root), patch.object(server.core, 'transcribe') as stt, patch.object(server.core, 'summarize', return_value='Общий итог'):
+                server.process(str(source), 'input.txt')
+                stt.assert_not_called()
+                self.assertEqual(server.STATE['text'], 'Полный текст записи')
+                self.assertEqual(server.STATE['summary'], 'Общий итог')
+                self.assertIn('Полный текст записи', Path(server.STATE['files']['md']).read_text(encoding='utf-8'))
+        server.update(text='', summary='', files={}, error='')
+
     @classmethod
     def setUpClass(cls):
         cls.httpd = server.make_server(0)

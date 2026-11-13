@@ -6,6 +6,8 @@
 !/server.py
 !/launcher.py
 !/settings.py
+!/summary_pipeline.py
+!/test_summary_pipeline.py
 !/test_settings.py
 !/index.html
 !/test_core.py

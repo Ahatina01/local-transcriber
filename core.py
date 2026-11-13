@@ -56,6 +56,10 @@ def split_text(text, limit=6000):
     return chunks
 
 
+class SummaryLimitError(RuntimeError):
+    pass
+
+
 def ollama_call(text, system):
     body = {'model': LLM, 'stream': False, 'think': False, 'keep_alive': 0, 'format': SCHEMA,
             'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': text}],
@@ -66,7 +70,7 @@ def ollama_call(text, system):
     with opener.open(req, timeout=900) as response:
         result = json.load(response)
     if result.get('done_reason') == 'length':
-        raise RuntimeError('Ответ модели достиг предела длины. Расшифровка сохранена; попробуйте отдельные части записи.')
+        raise SummaryLimitError('Ответ модели достиг предела длины.')
     content = result['message']['content'].strip()
     if not content:
         raise RuntimeError('Qwen вернула пустой ответ. Полная расшифровка сохранена.')
@@ -108,15 +112,8 @@ def render_notes(raw, source):
 def summarize(text, progress=lambda message: None):
     if not text.strip():
         return 'Речь не обнаружена. Содержание и задачи не сформированы.'
-    chunks = split_text(text)
-    notes = []
-    for index, chunk in enumerate(chunks):
-        progress(f'Содержание: часть {index + 1} из {len(chunks)}')
-        notes.append(render_notes(ollama_call(chunk, SYSTEM), chunk))
-    if len(notes) == 1:
-        return notes[0]
-    # Keep every chunk summary, including tasks, rather than silently discard a tail.
-    return '\n\n'.join(f'## Часть {i + 1}\n\n{note}' for i, note in enumerate(notes))
+    from summary_pipeline import summarize as run_pipeline
+    return run_pipeline(text, progress, ROOT / 'results' / '.summary-cache')
 
 
 def decode_audio(path):
